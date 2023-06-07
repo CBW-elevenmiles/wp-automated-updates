@@ -8,14 +8,12 @@ use Composer\Semver\Comparator;
 
 class Utility
 {
-    public $ticket;
-    public $date;
-    public $progressBar;
-
-    public function getLatestWordpressVersion()
+    public static function getLatestWordpressVersion()
     {
-        wp_version_check();
-        $from_api = get_site_transient('update_core');
+        \wp_version_check();
+        
+        $from_api = \get_site_transient('update_core');
+
         if (!$from_api) {
             return [];
         }
@@ -51,7 +49,7 @@ class Utility
         return isset($updates[0]['version']) ? $updates[0]['version'] : false;
     }
 
-    public function getPlugins()
+    public static function getPlugins()
     {
         $options = [
             'return'     => true,
@@ -63,29 +61,29 @@ class Utility
         return WP_CLI::runcommand('plugin list --format=json', $options);
     }
 
-    public function getPluginsToUpdate()
+    public static function getPluginsToUpdate()
     {
         return [...array_filter(self::getPlugins(), fn ($plugin) => $plugin['update'] == 'available')];
     }
 
-    public function getPluginVersion($name) {
+    public static function getPluginVersion($name) {
         $plugins = array_filter(self::getPlugins(), fn($plugin) => $plugin['name'] === $name);
 
-        if (count($plugins) === 1) return $plugins[0]['version'];
+        if (count($plugins) === 1) return $plugins[array_key_first($plugins)]['version'];
 
         return false;
     }
 
-    public function getCountOfThingsToUpdate()
+    public static function getCountOfThingsToUpdate()
     {
         global $wp_version;
-        $wordpressNeedsUpdate = $wp_version !== $this->getLatestWordpressVersion() ? 1 : 0;
-        $pluginsToUpdate = count($this->getPluginsToUpdate());
+        $wordpressNeedsUpdate = $wp_version !== self::getLatestWordpressVersion() ? 1 : 0;
+        $pluginsToUpdate = count(self::getPluginsToUpdate());
 
         return $wordpressNeedsUpdate + $pluginsToUpdate;
     }
 
-    public function updateWordpress($assoc_args = [])
+    public static function updateWordpress($assoc_args = [], $ticket, $date)
     {
         $args = join(' ', array_reduce(array_keys($assoc_args), function ($output, $key) use ($assoc_args) {
             array_push($output, "--{$key}={$assoc_args[$key]}");
@@ -97,19 +95,23 @@ class Utility
 
         $wp_details = self::get_wp_details();
 
-        self::commitToGit('Wordpress', $assoc_args['version'], $wp_details['wp_version']);
-        if ($this->progressBar) $this->progressBar->tick();
+        self::commitToGit('Wordpress', $assoc_args['version'], $wp_details['wp_version'], $ticket, $date);
     }
 
-    public function updatePlugin($name, $currentVersion)
+    public static function updatePlugin($name, $currentVersion, $ticket, $date)
     {
-        WP_CLI::runcommand("plugin update {$name}");
+        shell_exec(" wp plugin update {$name}");
         $newVersion = self::getPluginVersion($name);
-        self::commitToGit($name, $currentVersion, $newVersion);
-        if ($this->progressBar) $this->progressBar->tick();
+
+        if ($currentVersion === $newVersion) {
+            WP_CLI::warning("{$name} not updated. This is probably due to the plugin files being private. At this time you will have to manually update this plugin.");
+        } else {
+            WP_CLI::success("{$name} updated ({$currentVersion} -> {$newVersion}).");
+            self::commitToGit($name, $currentVersion, $newVersion, $ticket, $date);
+        }
     }
 
-    public function commitToGit($name, $version, $newVersion)
+    public static function commitToGit($name, $version, $newVersion, $ticket, $date)
     {
         $emoji = false;
 
@@ -133,7 +135,7 @@ class Utility
 
         if ($emoji) ':' . $emoji . ':';
 
-        shell_exec("git commit -am '{$this->ticket}: :package: {$emoji} {$name} ({$this->date})'");
+        shell_exec("git commit -am '{$ticket}: :package: {$emoji} {$name} ({$date})'");
     }
 
     public static function get_wp_details($abspath = ABSPATH)
