@@ -1,5 +1,5 @@
 <?php
-namespace Em11\WpAutomatedUpdates;
+namespace ElevenMiles\WpAutomatedUpdates;
 
 use WP_CLI;
 
@@ -9,6 +9,6 @@ class Commands {
     }
 
     function registerCustomCommands () {
-        WP_CLI::add_command( 'update',  'Trethowans\CLI\Update');
+        WP_CLI::add_command( 'update',  'ElevenMiles\WpAutomatedUpdates\Update');
     }
 }

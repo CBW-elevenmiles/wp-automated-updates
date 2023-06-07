@@ -1,6 +1,6 @@
 <?php
 
-namespace Trethowans\CLI;
+namespace ElevenMiles\WpAutomatedUpdates;
 
 use WP_CLI;
 use WP_CLI\Utils;

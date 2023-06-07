@@ -1,9 +1,9 @@
 <?php
 
-namespace Trethowans\CLI;
+namespace ElevenMiles\WpAutomatedUpdates;
 
 use WP_CLI;
-use Trethowans\CLI\Utility;
+use ElevenMiles\WpAutomatedUpdates\Utility;
 
 class Update extends Utility {
 
