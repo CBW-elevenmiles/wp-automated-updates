@@ -1,0 +1,19 @@
+{
+    "name": "em11/wp-automated-updates",
+    "description": "A WP-CLI plugin to add various commands to automate the process of updating the core of wordpress alongside plugins",
+    "type": "library",
+    "require": {
+        "wp-cli/wp-cli": "^2.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Em11\\WpAutomatedUpdates\\": "src/WpAutomatedUpdates.php"
+        }
+    },
+    "authors": [
+        {
+            "name": "Callum Bridgford-Whittick",
+            "email": "callum.bridgford-whittick@elevenmiles.com"
+        }
+    ]
+}
