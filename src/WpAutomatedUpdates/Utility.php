@@ -5,13 +5,23 @@ namespace ElevenMiles\WpAutomatedUpdates;
 use WP_CLI;
 use WP_CLI\Utils;
 use Composer\Semver\Comparator;
+use ElevenMiles\WpAutomatedUpdates\PremiumPlugins;
 
 class Utility
 {
+    /**
+     *
+     * Get the latest version of WordPress available.
+     *
+     * 
+     * @return string|false The version number, or false if the check failed or is still in progress.
+     *
+     */
+
     public static function getLatestWordpressVersion()
     {
         \wp_version_check();
-        
+
         $from_api = \get_site_transient('update_core');
 
         if (!$from_api) {
@@ -49,6 +59,14 @@ class Utility
         return isset($updates[0]['version']) ? $updates[0]['version'] : false;
     }
 
+    /**
+     *
+     * Get a list of plugins.
+     *
+     * 
+     * @return array|false The list of plugins, or false if the check failed or is still in progress.
+     *
+     */
     public static function getPlugins()
     {
         $options = [
@@ -61,19 +79,44 @@ class Utility
         return WP_CLI::runcommand('plugin list --format=json', $options);
     }
 
+    /**
+     *
+     * Get a list of plugins that need to be updated.
+     *
+     * 
+     * @return array|false The list of plugins, or false if the check failed or is still in progress.
+     *
+     */
     public static function getPluginsToUpdate()
     {
         return [...array_filter(self::getPlugins(), fn ($plugin) => $plugin['update'] == 'available')];
     }
 
-    public static function getPluginVersion($name) {
-        $plugins = array_filter(self::getPlugins(), fn($plugin) => $plugin['name'] === $name);
+    /**
+     *
+     * Get the version of a plugin.
+     *
+     * 
+     * @return string|false The version number, or false if the check failed or is still in progress.
+     *
+     */
+    public static function getPluginVersion($name)
+    {
+        $plugins = array_filter(self::getPlugins(), fn ($plugin) => $plugin['name'] === $name);
 
         if (count($plugins) === 1) return $plugins[array_key_first($plugins)]['version'];
 
         return false;
     }
 
+    /**
+     *
+     * Get the number of things that need to be updated.
+     *
+     * 
+     * @return int The number of things that need to be updated.
+     *
+     */
     public static function getCountOfThingsToUpdate()
     {
         global $wp_version;
@@ -83,6 +126,14 @@ class Utility
         return $wordpressNeedsUpdate + $pluginsToUpdate;
     }
 
+    /**
+     *
+     * Update WordPress.
+     *
+     * 
+     * @return void
+     *
+     */
     public static function updateWordpress($assoc_args = [], $ticket, $date)
     {
         $args = join(' ', array_reduce(array_keys($assoc_args), function ($output, $key) use ($assoc_args) {
@@ -93,24 +144,110 @@ class Utility
 
         WP_CLI::runcommand(sprintf('core update %s', $args));
 
-        $wp_details = self::get_wp_details();
+        $wp_details = self::getWordpressDetails();
 
         self::commitToGit('Wordpress', $assoc_args['version'], $wp_details['wp_version'], $ticket, $date);
     }
 
+    /**
+     *
+     * Update plugins.
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function updatePlugins($allPlugins, $ticket, $date)
+    {
+        $premiumPlugins = [
+            'advanced-custom-fields-pro',
+            'gravityforms',
+        ];
+        $premium = array_filter($allPlugins, fn ($plugin) => in_array($plugin['name'], $premiumPlugins));
+        $free = array_filter($allPlugins, fn ($plugin) => !in_array($plugin['name'], $premiumPlugins));
+
+        self::updatePremiumPlugins($premium, $ticket, $date);
+        self::updateFreePlugins($free, $ticket, $date);
+    }
+
+    /**
+     *
+     * Update Free plugins.
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function updateFreePlugins($plugins, $ticket, $date)
+    {
+        foreach ($plugins as $plugin) Utility::updatePlugin($plugin['name'], $plugin['version'], $ticket, $date);
+    }
+
+    /**
+     *
+     * Update Premium plugins.
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function updatePremiumPlugins($plugins, $ticket, $date)
+    {
+        foreach ($plugins as $plugin) {
+            switch ($plugin['name']) {
+                case 'advanced-custom-fields-pro':
+                    PremiumPlugins::AdvancedCustomFieldsPro($plugin['version'], $ticket, $date);
+                    break;
+                case 'gravityforms':
+                    PremiumPlugins::GravityForms($plugin['version'], $ticket, $date);
+                    break;
+            }
+        }
+    }
+
+    /**
+     *
+     * Update an individual plugin.
+     *
+     * 
+     * @return void
+     *
+     */
     public static function updatePlugin($name, $currentVersion, $ticket, $date)
     {
         shell_exec(" wp plugin update {$name}");
-        $newVersion = self::getPluginVersion($name);
+
+        Utility::afterUpdatePlugin($name, $currentVersion, $ticket, $date);
+    }
+
+    /**
+     *
+     * Log to terminal after updating a plugin and commit changes to git..
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function afterUpdatePlugin($name, $currentVersion, $ticket, $date)
+    {
+        $newVersion = Utility::getPluginVersion($name);
 
         if ($currentVersion === $newVersion) {
             WP_CLI::warning("{$name} not updated. This is probably due to the plugin files being private. At this time you will have to manually update this plugin.");
         } else {
             WP_CLI::success("{$name} updated ({$currentVersion} -> {$newVersion}).");
-            self::commitToGit($name, $currentVersion, $newVersion, $ticket, $date);
+            Utility::commitToGit($name, $currentVersion, $newVersion, $ticket, $date);
         }
     }
 
+    /**
+     *
+     * Commit changes to git.
+     *
+     * 
+     * @return void
+     *
+     */
     public static function commitToGit($name, $version, $newVersion, $ticket, $date)
     {
         $emoji = false;
@@ -138,7 +275,15 @@ class Utility
         shell_exec("git commit -am '{$ticket}: :package: {$emoji} {$name} ({$date})'");
     }
 
-    public static function get_wp_details($abspath = ABSPATH)
+    /**
+     *
+     * Get WordPress details.
+     *
+     * 
+     * @return array
+     *
+     */
+    public static function getWordpressDetails($abspath = ABSPATH)
     {
         $versions_path = $abspath . 'wp-includes/version.php';
 
@@ -155,13 +300,21 @@ class Utility
         $result = [];
 
         foreach ($vars as $var_name) {
-            $result[$var_name] = self::find_var($var_name, $version_content);
+            $result[$var_name] = self::findVar($var_name, $version_content);
         }
 
         return $result;
     }
 
-    public static function find_var($var_name, $code)
+    /**
+     *
+     * Find a variable in a PHP code block.
+     *
+     * 
+     * @return string|null
+     *
+     */
+    public static function findVar($var_name, $code)
     {
         $start = strpos($code, '$' . $var_name . ' = ');
 

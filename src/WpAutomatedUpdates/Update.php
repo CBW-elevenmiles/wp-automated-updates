@@ -9,8 +9,15 @@ class Update
 {
     public $ticket;
     public $date;
-    public $progressBar;
 
+    /**
+     *
+     * Usage: wp update all --ticket=EMS-1234 --date=01-01-2021
+     *
+     * 
+     * @return string|null
+     *
+     */
     public function all($args, $assoc_args)
     {
         if (!isset($assoc_args['ticket'])) WP_CLI::error('Please add "--ticket=EMS-1234" to your command');
@@ -22,17 +29,20 @@ class Update
         unset($assoc_args['ticket']);
         unset($assoc_args['date']);
 
-        $this->progressBar = WP_CLI\Utils\make_progress_bar('Updates', Utility::getCountOfThingsToUpdate());
-
         self::wordpress($args, array_merge($assoc_args, ['force' => true]));
         self::plugins($args, array_merge($assoc_args, ['force' => true]));
         // self::themes($args, array_merge($assoc_args, ['force' => true]));
         // self::translations($args, array_merge($assoc_args, ['force' => true]));
-
-        $this->progressBar->finish();
     }
 
-    // Usage: wp update wordpress
+    /**
+     *
+     * Usage: wp update wordpress --ticket=EMS-1234 --date=01-01-2021
+     *
+     * 
+     * @return string|null
+     *
+     */
     public function wordpress($args, $assoc_args)
     {
         global $wp_version;
@@ -51,7 +61,14 @@ class Update
         Utility::updateWordpress(array_merge($assoc_args, ['version' => $nextVersion]), $this->ticket, $this->date);
     }
 
-    // Usage: wp example subcommand
+    /**
+     *
+     * Usage: wp update plugins --ticket=EMS-1234 --date=01-01-2021
+     *
+     * 
+     * @return string|null
+     *
+     */
     public function plugins($args, $assoc_args)
     {
         $pluginsToUpdate = Utility::getPluginsToUpdate();
@@ -66,18 +83,34 @@ class Update
         WP_CLI::log(sprintf('%d plugins to update', (int)count($pluginsToUpdate)));
         if (!$force) WP_CLI::confirm('Ok to continue?', $assoc_args);
 
-        foreach ($pluginsToUpdate as $plugin) Utility::updatePlugin($plugin['name'], $plugin['version'], $this->ticket, $this->date);
+        Utility::updatePlugins($pluginsToUpdate, $this->ticket, $this->date);
+        Utility::updateFreePlugins($pluginsToUpdate, $this->ticket, $this->date);
+        Utility::updatePremiumPlugins($pluginsToUpdate, $this->ticket, $this->date);
     }
 
-    // Usage: wp example subcommand
+    /**
+     *
+     * Usage: wp update themes --ticket=EMS-1234 --date=01-01-2021
+     *
+     * 
+     * @return string|null
+     *
+     */
     public function themes()
     {
-        WP_CLI::log(sprintf('You have run a subcommand'));
+        WP_CLI::log(sprintf('Theme updates are coming soon'));
     }
 
-    // Usage: wp example subcommand
+    /**
+     *
+     * Usage: wp update translations --ticket=EMS-1234 --date=01-01-2021
+     *
+     * 
+     * @return string|null
+     *
+     */
     public function translations()
     {
-        WP_CLI::log(sprintf('You have run a subcommand'));
+        WP_CLI::log(sprintf('Translations updates are coming soon'));
     }
 }
