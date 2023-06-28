@@ -224,8 +224,7 @@ class Utility
      */
     public static function updatePlugin($name, $currentVersion, $ticket, $date)
     {
-        shell_exec(" wp plugin update {$name}");
-
+        Utility::runCommand("plugin update {$name} --force");
         Utility::afterUpdatePlugin($name, $currentVersion, $ticket, $date);
     }
 
@@ -240,6 +239,8 @@ class Utility
     public static function afterUpdatePlugin($name, $currentVersion, $ticket, $date)
     {
         $newVersion = Utility::getPluginVersion($name);
+        
+        dump($currentVersion, $newVersion);
 
         if ($currentVersion === $newVersion) {
             WP_CLI::warning("{$name} not updated. This is probably due to the plugin files being private. At this time you will have to manually update this plugin.");

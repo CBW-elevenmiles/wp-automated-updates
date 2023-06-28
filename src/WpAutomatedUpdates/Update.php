@@ -92,8 +92,6 @@ class Update
         if (!$force) WP_CLI::confirm('Ok to continue?', $assoc_args);
 
         Utility::updatePlugins($pluginsToUpdate, $this->ticket, $this->date);
-        Utility::updateFreePlugins($pluginsToUpdate, $this->ticket, $this->date);
-        Utility::updatePremiumPlugins($pluginsToUpdate, $this->ticket, $this->date);
     }
 
     /**

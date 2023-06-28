@@ -25,7 +25,7 @@ class PremiumPlugins {
         $key = getenv('ACFPRO_KEY');
         
         if (!$key) {
-            WP_CLI::log('Missing Advanced Custom Fields Pro license key.');
+            WP_CLI::error('Missing Advanced Custom Fields Pro license key.');
             return;
         }
 
@@ -41,13 +41,17 @@ class PremiumPlugins {
      * @return string|null
      *
      */
-    public static function GravityForms($name, $currentVersion, $ticket, $date){
-        if (!\is_plugin_active('gravityformscli')) return;
+    public static function GravityForms($name, $currentVersion, $ticket, $date)
+    {
+        if (!Utility::getPluginVersion('gravityformscli')) {
+            WP_CLI::error('Gravity Forms CLI is not installed.');
+            return;
+        }
 
         $key = getenv('GF_KEY');
         
         if (!$key) {
-            WP_CLI::log('Missing Gravity Forms license key.');
+            WP_CLI::error('Missing Gravity Forms license key.');
             return;
         }
         
