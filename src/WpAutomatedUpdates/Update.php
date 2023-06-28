@@ -82,7 +82,7 @@ class Update
         $pluginsToUpdate = Utility::getPluginsToUpdate();
 
         if (count($pluginsToUpdate) === 0) {
-            WP_CLI::log('No plugins to update;');
+            WP_CLI::log('No plugins to update at this time');
             return;
         }
 

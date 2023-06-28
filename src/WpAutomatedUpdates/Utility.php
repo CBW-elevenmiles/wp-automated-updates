@@ -171,8 +171,9 @@ class Utility
             'advanced-custom-fields-pro',
             'gravityforms',
         ];
-        $premium = array_filter($allPlugins, fn ($plugin) => in_array($plugin['name'], $premiumPlugins));
-        $free = array_filter($allPlugins, fn ($plugin) => !in_array($plugin['name'], $premiumPlugins));
+
+        $premium = array_filter($allPlugins, fn ($plugin) => (in_array($plugin['name'], $premiumPlugins) || str_contains($plugin['name'], 'gravityforms')));
+        $free = array_filter($allPlugins, fn ($plugin) => !(in_array($plugin['name'], $premiumPlugins) || str_contains($plugin['name'], 'gravityforms')));
 
         self::updatePremiumPlugins($premium, $ticket, $date);
         self::updateFreePlugins($free, $ticket, $date);
@@ -207,7 +208,7 @@ class Utility
                     PremiumPlugins::AdvancedCustomFieldsPro($plugin['version'], $ticket, $date);
                     break;
                 case 'gravityforms':
-                    PremiumPlugins::GravityForms($plugin['version'], $ticket, $date);
+                    PremiumPlugins::GravityForms($plugin['name'], $plugin['version'], $ticket, $date);
                     break;
             }
         }
@@ -250,6 +251,32 @@ class Utility
 
     /**
      *
+     * Update themes.
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function updateThemes()
+    {
+    }
+
+    /**
+     *
+     * Update translations.
+     *
+     * 
+     * @return void
+     *
+     */
+    public static function updateTranslations($ticket, $date)
+    {
+        Utility::runCommand('language core update');
+        Utility::commitToGit('Translations', 0, 1, $ticket, $date);
+    }
+
+    /**
+     *
      * Commit changes to git.
      *
      * 
@@ -278,9 +305,11 @@ class Utility
                 break;
         }
 
-        if ($emoji) ':' . $emoji . ':';
+        $emoji = $emoji ?  ':' . $emoji . ': ' : '';
+        $versionText = $version == 0 && $newVersion == 1 ? "{$version} -> {$newVersion} " : "";
 
-        shell_exec("git commit -am '{$ticket}: :package: {$emoji} {$name} ({$date})'");
+        shell_exec("git commit -am '{$ticket}: :package: {$emoji}{$name} {$versionText}({$date})'");
+        WP_CLI::success("{$ticket}: :package: {$emoji}{$name} {$versionText}({$date})");
     }
 
     /**
@@ -336,5 +365,25 @@ class Utility
         $value = substr($code, $start, $end - $start);
 
         return trim($value, " '");
+    }
+
+    /**
+     *
+     * Run a WP CLI command.
+     *
+     * 
+     * @return string|null
+     *
+     */
+    public static function runCommand($command)
+    {
+        $options = [
+            'return'     => true,
+            'parse'      => 'json',
+            'launch'     => false,
+            'exit_error' => false
+        ];
+
+        return WP_CLI::runcommand($command, $options);
     }
 }

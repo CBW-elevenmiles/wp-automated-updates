@@ -29,7 +29,7 @@ class PremiumPlugins {
             return;
         }
 
-        WP_CLI::runcommand("plugin install https://connect.advancedcustomfields.com/index.php?p=pro&a=download&k={$key}&#8221");
+        Utility::runCommand("plugin install https://connect.advancedcustomfields.com/index.php?p=pro&a=download&k={$key}&#8221 --force");
         Utility::afterUpdatePlugin('advanced-custom-fields-pro', $currentVersion, $ticket, $date);
     }
 
@@ -41,15 +41,21 @@ class PremiumPlugins {
      * @return string|null
      *
      */
-    public static function GravityForms($currentVersion, $ticket, $date){
+    public static function GravityForms($name, $currentVersion, $ticket, $date){
+        if (!\is_plugin_active('gravityformscli')) return;
+
         $key = getenv('GF_KEY');
         
         if (!$key) {
             WP_CLI::log('Missing Gravity Forms license key.');
             return;
         }
+        
+        $command = "gf update {$name} --key={$key}";
 
-        WP_CLI::runcommand("gf update --key={$key}");
+        if ($name === 'gravityforms') $command = "gf update --key={$key}";
+
+        Utility::runCommand($command);
         Utility::afterUpdatePlugin('gravityforms', $currentVersion, $ticket, $date);
     }
 }
