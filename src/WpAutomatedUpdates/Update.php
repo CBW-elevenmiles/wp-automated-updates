@@ -5,6 +5,14 @@ namespace ElevenMiles\WpAutomatedUpdates;
 use WP_CLI;
 use ElevenMiles\WpAutomatedUpdates\Utility;
 
+/**
+ * Update class.
+ * 
+ * 
+ * @package    ElevenMiles\WpAutomatedUpdates
+ * @subpackage ElevenMiles\WpAutomatedUpdates\Update
+ * @since      1.0.0
+ */
 class Update
 {
     public $ticket;

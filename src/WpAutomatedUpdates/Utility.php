@@ -7,6 +7,14 @@ use WP_CLI\Utils;
 use Composer\Semver\Comparator;
 use ElevenMiles\WpAutomatedUpdates\PremiumPlugins;
 
+/**
+ * Utility class.
+ * 
+ * 
+ * @package    ElevenMiles\WpAutomatedUpdates
+ * @subpackage ElevenMiles\WpAutomatedUpdates\Utility
+ * @since      1.0.0
+ */
 class Utility
 {
     /**

@@ -4,6 +4,14 @@ namespace ElevenMiles\WpAutomatedUpdates;
 
 use WP_CLI;
 
+/**
+ * PremiumPlugins class.
+ * 
+ * 
+ * @package    ElevenMiles\WpAutomatedUpdates
+ * @subpackage ElevenMiles\WpAutomatedUpdates\PremiumPlugins
+ * @since      1.0.0
+ */
 class PremiumPlugins {
     /**
      *
