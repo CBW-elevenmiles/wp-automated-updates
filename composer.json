@@ -7,7 +7,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ElevenMiles\\WpAutomatedUpdates\\": "src/WpAutomatedUpdates"
+            "ElevenMiles\\WpAutomatedUpdates\\": "src/WpAutomatedUpdates/Commands.php"
         }
     },
     "authors": [
